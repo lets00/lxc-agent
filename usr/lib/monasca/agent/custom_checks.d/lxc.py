@@ -13,7 +13,6 @@
 #    under the License.
 
 import os
-import re
 
 import monasca_agent.collector.checks as checks
 
@@ -86,23 +85,19 @@ class LXC(checks.AgentCheck):
         cpuset_cgroup = '{0}/{1}/'.format(_LXC_CGROUP_CPUSET_PWD, container_name)
         metrics = {}
 
-        # CPU time consuption in nanoseconds
         metrics['cpuacct.usage'] = int(open(cpu_cgroup + 'cpuacct.usage', 'r')\
                                       .readline().rstrip('\n'))
         # CPUs that container can use
         #metrics['cpuset.cpus'] = open(cpuset_cgroup + 'cpuset.cpus', 'r')\
         #                              .readline().rstrip('\n')
-
-        # CPU time (in nanoseconds) consumed on each CPU
         cpuacct_usage_percpu = open(cpu_cgroup + 'cpuacct.usage_percpu' , 'r')\
                                     .readline().rstrip(' \n').split(' ')
         for cpu in range(len(cpuacct_usage_percpu)):
             metrics['cpuacct.usage_percpu.cpu{0}'.format(cpu)] = int(cpuacct_usage_percpu[cpu])
 
         cpu_file = open(cpu_cgroup + 'cpuacct.stat', 'r').read().split('\n')
-        metrics['cpuacct.user'] = int(cpu_file[0].strip('user '))
-        metrics['cpuacct.system'] = int(cpu_file[1].strip('system '))
-
+        metrics_stat = self._get_metrics_by_file(cpu_cgroup + 'cpuacct.stat', 'cpuacct')
+        metrics.update(metrics_stat)
         return metrics
 
     def _get_mem_metrics(self, container_name):
