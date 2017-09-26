@@ -11,6 +11,7 @@
 #    under the License.
 
 import os
+import re
 
 import monasca_agent.collector.checks as checks
 
@@ -18,6 +19,9 @@ _LXC_CGROUP_PWD = '/sys/fs/cgroup'
 _LXC_CGROUP_CPU_PWD = '{0}/cpu/lxc'.format(_LXC_CGROUP_PWD)
 _LXC_CGROUP_CPUSET_PWD = '{0}/cpuset/lxc'.format(_LXC_CGROUP_PWD)
 _LXC_CGROUP_MEM_PWD = '{0}/memory/lxc'.format(_LXC_CGROUP_PWD)
+
+_LXC_NET_REGEX = re.compile(r'(\w+):(.+)')
+
 
 class LXC(checks.AgentCheck):
 
@@ -104,7 +108,37 @@ class LXC(checks.AgentCheck):
         return metrics
 
     def _get_net_metrics(self, container_name):
-        pass
+        metrics = {}
+        pid = self._get_pid_container(container_name)
+        net_cgroup = '/proc/{0}/net/'.format(pid)
+
+        net_iface = []
+        #TODO: ADD IFACE NAME IN DIMENSIONS!!!
+        with open(net_cgroup + 'dev','r') as dev_file:
+            for line in dev_file:
+                iface = re.search(_LXC_NET_REGEX, line)
+                if iface:
+                    #case pattern match
+                    iface_name = iface.group(1)
+                    iface_info = iface.group(2).split('\t')
+                    net_iface.append(iface_name)
+                    metrics['net.rx.bytes'] = iface_info[0]
+                    metrics['net.rx.packets'] = iface_info[1]
+                    metrics['net.rx.errs'] = iface_info[2]
+                    metrics['net.rx.drop'] = iface_info[3]
+                    metrics['net.rx.fifo'] = iface_info[4]
+                    metrics['net.rx.frame'] = iface_info[5]
+                    metrics['net.rx.compressed'] = iface_info[6]
+                    metrics['net.rx.multicast'] = iface_info[7]
+                    metrics['net.tx.bytes'] = iface_info[8]
+                    metrics['net.tx.packets'] = iface_info[9]
+                    metrics['net.tx.errs'] = iface_info[10]
+                    metrics['net.tx.drop'] = iface_info[11]
+                    metrics['net.tx.fifo'] = iface_info[12]
+                    metrics['net.tx.frame'] = iface_info[13]
+                    metrics['net.tx.compressed'] = iface_info[14]
+                    metrics['net.tx.multicast'] = iface_info[15]
+        return metrics
 
     def _get_metrics_by_file(self, filename, pre_key):
         metrics = {}
@@ -114,3 +148,8 @@ class LXC(checks.AgentCheck):
                 resource_key = '{0}.{1}'.format(pre_key,resource_post_key)
                 metrics[resource_key] = int(resource_value)
         return metrics
+
+    def _get_pid_container(self, container_name):
+        cpu_tasks = '{0}/{1}/tasks'.format(_LXC_CGROUP_CPU_PWD,container_name)
+        pid = open(cpu_tasks, 'r').readline().rstrip('\n')
+        return pid
