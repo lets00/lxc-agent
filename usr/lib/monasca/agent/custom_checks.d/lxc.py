@@ -40,8 +40,8 @@ class LXC(checks.AgentCheck):
                                                     'service': 'lxc'}, self.instance)
             self._collect_cpu_metrics(container_name)
             self._collect_mem_metrics(container_name)
-            #self._disk()
-            #self._net()
+            self._collect_net_metrics(container_name)
+            self._collect_disk_metrics(container_name)
 
     def _containers_name(self):
         container_name = self.instance.get('container')
@@ -82,9 +82,13 @@ class LXC(checks.AgentCheck):
             self.log.warning('\tMetric: {0}, value: {1}'.format(metric,value))
             self.gauge(metric, value, dimensions=self.dimensions)
 
+    def _collect_disk_metrics(self, container_name):
+        pass
+
     def _get_cpu_metrics(self, container_name):
         cpu_cgroup = '{0}/{1}/'.format(_LXC_CGROUP_CPU_PWD, container_name)
-        cpuset_cgroup = '{0}/{1}/'.format(_LXC_CGROUP_CPUSET_PWD, container_name)
+        cpuset_cgroup = '{0}/{1}/'.format(_LXC_CGROUP_CPUSET_PWD,
+                                          container_name)
         metrics = {}
 
         metrics['cpuacct.usage'] = int(open(cpu_cgroup + 'cpuacct.usage', 'r')\
@@ -95,7 +99,8 @@ class LXC(checks.AgentCheck):
         cpuacct_usage_percpu = open(cpu_cgroup + 'cpuacct.usage_percpu' , 'r')\
                                     .readline().rstrip(' \n').split(' ')
         for cpu in range(len(cpuacct_usage_percpu)):
-            metrics['cpuacct.usage_percpu.cpu{0}'.format(cpu)] = int(cpuacct_usage_percpu[cpu])
+            metrics['cpuacct.usage_percpu.cpu{0}'.format(cpu)] = \
+                int(cpuacct_usage_percpu[cpu])
 
         cpu_file = open(cpu_cgroup + 'cpuacct.stat', 'r').read().split('\n')
         metrics_stat = self._get_metrics_by_file(cpu_cgroup + 'cpuacct.stat', 'cpuacct')
@@ -120,24 +125,24 @@ class LXC(checks.AgentCheck):
                 if iface:
                     #case pattern match
                     iface_name = iface.group(1)
-                    iface_info = iface.group(2).split('\t')
+                    iface_info = iface.group(2).split()
                     net_iface.append(iface_name)
-                    metrics['net.rx.bytes'] = iface_info[0]
-                    metrics['net.rx.packets'] = iface_info[1]
-                    metrics['net.rx.errs'] = iface_info[2]
-                    metrics['net.rx.drop'] = iface_info[3]
-                    metrics['net.rx.fifo'] = iface_info[4]
-                    metrics['net.rx.frame'] = iface_info[5]
-                    metrics['net.rx.compressed'] = iface_info[6]
-                    metrics['net.rx.multicast'] = iface_info[7]
-                    metrics['net.tx.bytes'] = iface_info[8]
-                    metrics['net.tx.packets'] = iface_info[9]
-                    metrics['net.tx.errs'] = iface_info[10]
-                    metrics['net.tx.drop'] = iface_info[11]
-                    metrics['net.tx.fifo'] = iface_info[12]
-                    metrics['net.tx.frame'] = iface_info[13]
-                    metrics['net.tx.compressed'] = iface_info[14]
-                    metrics['net.tx.multicast'] = iface_info[15]
+                    metrics['net.rx.bytes'] = int(iface_info[0])
+                    metrics['net.rx.packets'] = int(iface_info[1])
+                    metrics['net.rx.errs'] = int(iface_info[2])
+                    metrics['net.rx.drop'] = int(iface_info[3])
+                    metrics['net.rx.fifo'] = int(iface_info[4])
+                    metrics['net.rx.frame'] = int(iface_info[5])
+                    metrics['net.rx.compressed'] = int(iface_info[6])
+                    metrics['net.rx.multicast'] = int(iface_info[7])
+                    metrics['net.tx.bytes'] = int(iface_info[8])
+                    metrics['net.tx.packets'] = int(iface_info[9])
+                    metrics['net.tx.errs'] = int(iface_info[10])
+                    metrics['net.tx.drop'] = int(iface_info[11])
+                    metrics['net.tx.fifo'] = int(iface_info[12])
+                    metrics['net.tx.frame'] = int(iface_info[13])
+                    metrics['net.tx.compressed'] = int(iface_info[14])
+                    metrics['net.tx.multicast'] = int(iface_info[15])
         return metrics
 
     def _get_metrics_by_file(self, filename, pre_key):
