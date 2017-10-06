@@ -14,7 +14,6 @@ init_config:
 
 instances:
     - container: all
-      state: True
       cpu: True
       mem: True
       blkio: True

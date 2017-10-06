@@ -12,7 +12,6 @@ init_config:
 
 instances:
     - container: all
-      state: True
       cpu: True
       mem: True
       blkio: True
@@ -32,7 +31,14 @@ The LXC checks return the following metrics:
 | memory.mapped_file| hostname, container_name, service=lxc | size of memory-mapped mapped files, including tmpfs (shmem), in bytes |
 | memory.pgpgin | hostname, container_name, service=lxc | number of pages paged into memory |
 | memory.pgpgout | hostname, container_name, service=lxc | number of pages paged out of memory |
-| ... | hostname, container_name, service=lxc | ... |
+| memory.swap | hostname, container_name, service=lxc | swap usage in bytes |
+| memory.active_anon | hostname, container_name, service=lxc | anonymous and swap cache on LRU list, in bytes |
+| memory.inactive_anon | hostname, container_name, service=lxc | anonymous and swap cache on inactive LRU list, in bytes |
+| memory.active_file | hostname, container_name, service=lxc | file-backed memory on active LRU list, in bytes |
+| memory.inactive_file | hostname, container_name, service=lxc | file-backed memory on inactive LRU list, in bytes |
+| memory.unevictable | hostname, container_name, service=lxc | memory that cannot be reclaimed, in bytes |
+| memory.hierarchical_memory_limit | hostname, container_name, service=lxc | memory limit for the hierarchy that contains the memory cgroup, in bytes |
+| memory.hierarchical_memsw_limit | hostname, container_name, service=lxc | memory plus swap limit for the hierarchy that contains the memory cgroup, in bytes |
 | net.rx.bytes | hostname, container_name, service=lxc, iface | number of received bytes |
 | net.rx.packets | hostname, container_name, service=lxc, iface | number of received packets |
 | net.rx.errs | hostname, container_name, service=lxc, iface | number of received error packets |
