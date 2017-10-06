@@ -22,7 +22,6 @@ _LXC_CGROUP_MEM_PWD = '{0}/memory/lxc'.format(_LXC_CGROUP_PWD)
 
 _LXC_NET_REGEX = re.compile(r'(\w+):(.+)')
 
-
 class LXC(checks.AgentCheck):
 
     """ Docfile """

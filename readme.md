@@ -1,6 +1,6 @@
 ## LXC
 
-An agent that provides LXC cgroup data.
+An agent that provides LXC cgroup data. This agent does not required sudo.
 
 Requirements:
   * lxc
@@ -9,7 +9,6 @@ Sample config:
 
 ```
 init_config:
-    humanize: yes
 
 instances:
     - container: all
