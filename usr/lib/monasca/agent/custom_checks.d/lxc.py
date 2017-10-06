@@ -19,9 +19,10 @@ _LXC_CGROUP_PWD = '/sys/fs/cgroup'
 _LXC_CGROUP_CPU_PWD = '{0}/cpu/lxc'.format(_LXC_CGROUP_PWD)
 _LXC_CGROUP_CPUSET_PWD = '{0}/cpuset/lxc'.format(_LXC_CGROUP_PWD)
 _LXC_CGROUP_MEM_PWD = '{0}/memory/lxc'.format(_LXC_CGROUP_PWD)
+_LXC_CGROUP_DISK_PWD = '{0}/blkio/lxc'.format(_LXC_CGROUP_PWD)
 
 _LXC_NET_REGEX = re.compile(r'(\w+):(.+)')
-_LXC_DISK_REGEX = re.compile(r'(\w+): (.+)')
+_LXC_DISK_REGEX = re.compile(r'(\w+)\s(\d+)')
 
 class LXC(checks.AgentCheck):
 
@@ -158,12 +159,13 @@ class LXC(checks.AgentCheck):
     def _get_disk_metrics(self, container_name):
         metrics = {}
         pid = self._get_pid_container(container_name)
-        disk_cgroup = '/proc/{0}/io'.format(pid)
+        disk_cgroup = '{0}/{1}/blkio.throttle.io_service_bytes'.format(
+                       _LXC_CGROUP_DISK_PWD, container_name)
         with open(disk_cgroup, 'r') as disk_file:
             for line in disk_file:
                 disk = re.search(_LXC_DISK_REGEX, line)
                 if disk:
-                    disk_key = disk.group(1)
+                    disk_key ='blkio.{0}'.format(disk.group(1)).lower()
                     disk_value = disk.group(2)
                     metrics[disk_key] = int(disk_value)
         return metrics

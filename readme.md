@@ -1,6 +1,6 @@
 ## LXC
 
-An agent that provides LXC cgroup data.
+An agent that provides LXC cgroup data. This agent does not required sudo.
 
 Requirements:
   * lxc
@@ -9,7 +9,6 @@ Sample config:
 
 ```
 init_config:
-    humanize: yes
 
 instances:
     - container: all
@@ -24,7 +23,6 @@ The LXC checks return the following metrics:
 
 | Metric Name | Dimensions | Semantics |
 | ----------- | ---------- | --------- |
-|  | hostname, container_name, service=lxc |  |
 | cpuacct.usage | hostname, container_name, service=lxc | reports the total CPU time (in nanoseconds) consumed |
 | cpuacct.usage_percpu.cpu{X} | hostname, container_name, service=lxc | reports the total CPU time (in nanoseconds) consumed by cpu X |
 | cpuacct.user |  hostname, container_name, service=lxc| CPU time consumed by tasks in user mode. Unit defined by the USER_HZ variable |
@@ -51,3 +49,8 @@ The LXC checks return the following metrics:
 | net.tx.frame | hostname, container_name, service=lxc, iface | number of transfered frame packets |
 | net.tx.compressed | hostname, container_name, service=lxc, iface| number of transfered compressed bytes |
 | net.tx.multicast | hostname, container_name, service=lxc, iface | number of transfered multicast packets |
+| blkio.read | hostname, container_name, service=lxc | number of bytes read from the disk to the cgroup(container) |
+| blkio.write | hostname, container_name, service=lxc | number of bytes write from the cgroup(container) to disk |
+| blkio.async | hostname, container_name, service=lxc | number of bytes asynchronous |
+| blkio.sync | hostname, container_name, service=lxc | number of bytes synchronous |
+| blkio.total | hostname, container_name, service=lxc | number total of bytes |
