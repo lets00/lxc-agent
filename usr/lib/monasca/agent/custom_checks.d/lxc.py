@@ -19,8 +19,10 @@ _LXC_CGROUP_PWD = '/sys/fs/cgroup'
 _LXC_CGROUP_CPU_PWD = '{0}/cpu/lxc'.format(_LXC_CGROUP_PWD)
 _LXC_CGROUP_CPUSET_PWD = '{0}/cpuset/lxc'.format(_LXC_CGROUP_PWD)
 _LXC_CGROUP_MEM_PWD = '{0}/memory/lxc'.format(_LXC_CGROUP_PWD)
+_LXC_CGROUP_DISK_PWD = '{0}/blkio/lxc'.format(_LXC_CGROUP_PWD)
 
 _LXC_NET_REGEX = re.compile(r'(\w+):(.+)')
+_LXC_DISK_REGEX = re.compile(r'(\w+)\s(\d+)')
 
 class LXC(checks.AgentCheck):
 
@@ -82,7 +84,13 @@ class LXC(checks.AgentCheck):
                 self.gauge(metric, value, dimensions=net_dimensions)
 
     def _collect_disk_metrics(self, container_name):
-        pass
+        if not self.instance.get('disk', True):
+            return
+        metrics = self._get_disk_metrics(container_name)
+        disk_dimensions = self._get_dimensions(container_name)
+        for metric, value in metrics.iteritems():
+            self.log.warning('\tMetric: {0}, value: {1}'.format(metric,value))
+            self.gauge(metric, value, dimensions=disk_dimensions)
 
     def _get_cpu_metrics(self, container_name):
         cpu_cgroup = '{0}/{1}/'.format(_LXC_CGROUP_CPU_PWD, container_name)
@@ -146,6 +154,20 @@ class LXC(checks.AgentCheck):
                         'net.tx.compressed': int(iface_info[14]),
                         'net.tx.multicast': int(iface_info[15])
                     }
+        return metrics
+
+    def _get_disk_metrics(self, container_name):
+        metrics = {}
+        pid = self._get_pid_container(container_name)
+        disk_cgroup = '{0}/{1}/blkio.throttle.io_service_bytes'.format(
+                       _LXC_CGROUP_DISK_PWD, container_name)
+        with open(disk_cgroup, 'r') as disk_file:
+            for line in disk_file:
+                disk = re.search(_LXC_DISK_REGEX, line)
+                if disk:
+                    disk_key ='blkio.{0}'.format(disk.group(1)).lower()
+                    disk_value = disk.group(2)
+                    metrics[disk_key] = int(disk_value)
         return metrics
 
     def _get_metrics_by_file(self, filename, pre_key):
