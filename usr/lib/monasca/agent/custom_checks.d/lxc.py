@@ -84,7 +84,7 @@ class LXC(checks.AgentCheck):
                 self.gauge(metric, value, dimensions=net_dimensions)
 
     def _collect_disk_metrics(self, container_name):
-        if not self.instance.get('disk', True):
+        if not self.instance.get('blkio', True):
             return
         metrics = self._get_disk_metrics(container_name)
         disk_dimensions = self._get_dimensions(container_name)
