@@ -1,6 +1,6 @@
 ## LXC
 
-An agent that provides LXC cgroup data. This agent does not required sudo.
+An agent that provides LXC cgroup data. This agent does not require sudo.
 
 Requirements:
   * lxc
@@ -47,16 +47,16 @@ The LXC checks return the following metrics:
 | net.rx.frame | hostname, container_name, service=lxc, iface | number of received frame packets |
 | net.rx.compressed | hostname, container_name, service=lxc, iface| number of received compressed bytes |
 | net.rx.multicast | hostname, container_name, service=lxc, iface | number of received multicast packets |
-| net.tx.bytes | hostname, container_name, service=lxc, iface| number of transfered bytes |
-| net.tx.packets | hostname, container_name, service=lxc, iface | number of transfered packets |
-| net.tx.errs | hostname, container_name, service=lxc, iface | number of transfered error packets |
-| net.tx.drop | hostname, container_name, service=lxc, iface | number of transfered dropped packets |
-| net.tx.fifo | hostname, container_name, service=lxc, iface | number of transfered fifo packets |
-| net.tx.frame | hostname, container_name, service=lxc, iface | number of transfered frame packets |
-| net.tx.compressed | hostname, container_name, service=lxc, iface| number of transfered compressed bytes |
-| net.tx.multicast | hostname, container_name, service=lxc, iface | number of transfered multicast packets |
+| net.tx.bytes | hostname, container_name, service=lxc, iface| number of transferred bytes |
+| net.tx.packets | hostname, container_name, service=lxc, iface | number of transferred packets |
+| net.tx.errs | hostname, container_name, service=lxc, iface | number of transferred error packets |
+| net.tx.drop | hostname, container_name, service=lxc, iface | number of transferred dropped packets |
+| net.tx.fifo | hostname, container_name, service=lxc, iface | number of transferred fifo packets |
+| net.tx.frame | hostname, container_name, service=lxc, iface | number of transferred frame packets |
+| net.tx.compressed | hostname, container_name, service=lxc, iface| number of transferred compressed bytes |
+| net.tx.multicast | hostname, container_name, service=lxc, iface | number of transferred multicast packets |
 | blkio.read | hostname, container_name, service=lxc | number of bytes read from the disk to the cgroup(container) |
-| blkio.write | hostname, container_name, service=lxc | number of bytes write from the cgroup(container) to disk |
-| blkio.async | hostname, container_name, service=lxc | number of bytes asynchronous |
-| blkio.sync | hostname, container_name, service=lxc | number of bytes synchronous |
-| blkio.total | hostname, container_name, service=lxc | number total of bytes |
+| blkio.write | hostname, container_name, service=lxc | number of bytes written from the cgroup(container) to the disk |
+| blkio.async | hostname, container_name, service=lxc | number of asynchronous bytes |
+| blkio.sync | hostname, container_name, service=lxc | number of synchronous bytes |
+| blkio.total | hostname, container_name, service=lxc | total number of bytes |
