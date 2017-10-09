@@ -29,12 +29,8 @@ class LXC(checks.AgentCheck):
     """ Docfile """
 
     def check(self, instance):
-        #TODO: Using log warning to view temp log
-        self.log.warning("Running LXC collector...")
         self.instance = instance
-
         self.containers = self._containers_name()
-        self.log.warning("Containers: {0}".format(str(self.containers)))
         for container_name in self.containers:
             self._collect_cpu_metrics(container_name)
             self._collect_mem_metrics(container_name)
@@ -60,7 +56,6 @@ class LXC(checks.AgentCheck):
         metrics = self._get_cpu_metrics(container_name)
         cpu_dimensions = self._get_dimensions(container_name)
         for metric, value in metrics.iteritems():
-            self.log.warning('\tMetric: {0}, value: {1}'.format(metric,value))
             self.gauge(metric, value, dimensions=cpu_dimensions)
 
     def _collect_mem_metrics(self, container_name):
@@ -69,7 +64,6 @@ class LXC(checks.AgentCheck):
         metrics = self._get_mem_metrics(container_name)
         mem_dimensions = self._get_dimensions(container_name)
         for metric, value in metrics.iteritems():
-            self.log.warning('\tMetric: {0}, value: {1}'.format(metric,value))
             self.gauge(metric, value, dimensions=mem_dimensions)
 
     def _collect_net_metrics(self, container_name):
@@ -80,7 +74,6 @@ class LXC(checks.AgentCheck):
             net_dimensions = self._get_dimensions(container_name,
                                              {'iface': iface_name})
             for metric, value in iface_metrics.iteritems():
-                self.log.warning('\tMetric: {0}, value: {1}'.format(metric,value))
                 self.gauge(metric, value, dimensions=net_dimensions)
 
     def _collect_disk_metrics(self, container_name):
@@ -89,7 +82,6 @@ class LXC(checks.AgentCheck):
         metrics = self._get_disk_metrics(container_name)
         disk_dimensions = self._get_dimensions(container_name)
         for metric, value in metrics.iteritems():
-            self.log.warning('\tMetric: {0}, value: {1}'.format(metric,value))
             self.gauge(metric, value, dimensions=disk_dimensions)
 
     def _get_cpu_metrics(self, container_name):
@@ -123,16 +115,16 @@ class LXC(checks.AgentCheck):
 
     def _get_net_metrics(self, container_name):
         """Get metrics for each net interface found
-	
-	:returns: a dictionary containing metrics regarding each
-	    net interface found, in the format:
-	        
-		{
-		    'lo': {
-		        net.rx.bytes': 1234
-		    }, 
+
+	       :returns: a dictionary containing metrics regarding each
+	       net interface found, in the format:
+
+		   {
+		       'lo': {
+		           'net.rx.bytes': 1234
+		       },
 		    ...
-		}
+		   }
         """
         metrics = {}
         pid = self._get_pid_container(container_name)
