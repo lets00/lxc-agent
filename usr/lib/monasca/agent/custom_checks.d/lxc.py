@@ -51,7 +51,7 @@ class LXC(checks.AgentCheck):
             self.log.info('\tContainer name: ' + container_name)
             return [container_name]
         else:
-            self.log.error('\tContainer {0} does not find'.format(container_name))
+            self.log.error('\tContainer {0} was not found'.format(container_name))
             return
 
     def _collect_cpu_metrics(self, container_name):
@@ -122,8 +122,17 @@ class LXC(checks.AgentCheck):
         return metrics
 
     def _get_net_metrics(self, container_name):
-        """Returns a dictionary with metrics regarding each net interface found,
-        in the format: {'lo': {net.rx.bytes': 1234}, ...}
+        """Get metrics for each net interface found
+	
+	:returns: a dictionary containing metrics regarding each
+	    net interface found, in the format:
+	        
+		{
+		    'lo': {
+		        net.rx.bytes': 1234
+		    }, 
+		    ...
+		}
         """
         metrics = {}
         pid = self._get_pid_container(container_name)
