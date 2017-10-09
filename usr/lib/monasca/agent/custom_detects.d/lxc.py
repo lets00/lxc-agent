@@ -4,7 +4,7 @@ import logging
 import monasca_setup.agent_config
 import monasca_setup.detection
 
-_LXC_CGROUP_CPU_PWD = '/sys/fs/cgroup/cpu/lxc/'
+_LXC_PWD = '/var/lib/lxc'
 log = logging.getLogger(__name__)
 
 class LXC(monasca_setup.detection.Plugin):
@@ -27,11 +27,9 @@ class LXC(monasca_setup.detection.Plugin):
         super(LXC, self).__init__(template_dir, overwrite, args)
 
     def _detect(self):
-        """Verify if there are running containers."""
-        for name_all in os.listdir(_LXC_CGROUP_CPU_PWD):
-            if os.path.isdir(name_all):
-                self.available = True
-                break
+        """Verify if there are container folder."""
+        if os.path.exists(_LXC_PWD):
+            self.available = True
 
     def build_config(self):
         config = monasca_setup.agent_config.Plugins()
