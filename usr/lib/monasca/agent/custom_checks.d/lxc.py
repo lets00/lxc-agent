@@ -25,8 +25,8 @@ _LXC_NET_REGEX = re.compile(r'(\w+):(.+)')
 _LXC_DISK_REGEX = re.compile(r'(\w+)\s(\d+)')
 
 class LXC(checks.AgentCheck):
-
-    """ Docfile """
+    """ Agent to collect LXC cgroup information based mostly on read cgroup
+    files of each container"""
 
     def check(self, instance):
         self.instance = instance
@@ -47,7 +47,8 @@ class LXC(checks.AgentCheck):
             self.log.info('\tContainer name: ' + container_name)
             return [container_name]
         else:
-            self.log.error('\tContainer {0} was not found'.format(container_name))
+            self.log.error('\tContainer {0} was not found'\
+                            .format(container_name))
             return
 
     def _collect_cpu_metrics(self, container_name):
@@ -85,16 +86,15 @@ class LXC(checks.AgentCheck):
             self.gauge(metric, value, dimensions=disk_dimensions)
 
     def _get_cpu_metrics(self, container_name):
-        cpu_cgroup = '{0}/{1}/'.format(_LXC_CGROUP_CPU_PWD, container_name)
-        cpuset_cgroup = '{0}/{1}/'.format(_LXC_CGROUP_CPUSET_PWD,
-                                          container_name)
+        """Get metrics from cpuacct.usage cgroup file
+        
+            :return: a dictionary containing cpu metrics defined on container
+            cgroup
+        """
         metrics = {}
-
+        cpu_cgroup = '{0}/{1}/'.format(_LXC_CGROUP_CPU_PWD, container_name)
         metrics['cpuacct.usage'] = int(open(cpu_cgroup + 'cpuacct.usage', 'r')\
                                       .readline().rstrip('\n'))
-        # CPUs that container can use
-        #metrics['cpuset.cpus'] = open(cpuset_cgroup + 'cpuset.cpus', 'r')\
-        #                              .readline().rstrip('\n')
         cpuacct_usage_percpu = open(cpu_cgroup + 'cpuacct.usage_percpu' , 'r')\
                                     .readline().rstrip(' \n').split(' ')
         for cpu in range(len(cpuacct_usage_percpu)):
@@ -108,6 +108,11 @@ class LXC(checks.AgentCheck):
         return metrics
 
     def _get_mem_metrics(self, container_name):
+        """Get metrics from memory.stat cgroup file
+
+           :return: a dictionary containing memory metrics defined on container
+           cgroup
+        """
         mem_cgroup = '{0}/{1}/'.format(_LXC_CGROUP_MEM_PWD, container_name)
         metrics = self._get_metrics_by_file(mem_cgroup + 'memory.stat',
                                             'memory')
@@ -129,7 +134,6 @@ class LXC(checks.AgentCheck):
         metrics = {}
         pid = self._get_pid_container(container_name)
         net_cgroup = '/proc/{0}/net/'.format(pid)
-
         with open(net_cgroup + 'dev','r') as dev_file:
             for line in dev_file:
                 iface = re.search(_LXC_NET_REGEX, line)
@@ -158,6 +162,11 @@ class LXC(checks.AgentCheck):
         return metrics
 
     def _get_disk_metrics(self, container_name):
+        """Get metrics blkio.throttle.io_service_bytes from  cgroup file
+
+            :return: a dictionary containing blkio metrics used to verify disk
+            cgroup usage
+        """
         metrics = {}
         pid = self._get_pid_container(container_name)
         disk_cgroup = '{0}/{1}/blkio.throttle.io_service_bytes'.format(
@@ -172,6 +181,9 @@ class LXC(checks.AgentCheck):
         return metrics
 
     def _get_metrics_by_file(self, filename, pre_key):
+        """Some cgroup files have a pattern 'key value' that can be easily
+        handled to a dictionary
+        """
         metrics = {}
         with open(filename, 'r') as cgroup_file:
             for line in cgroup_file:
