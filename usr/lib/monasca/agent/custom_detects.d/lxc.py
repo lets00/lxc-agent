@@ -19,6 +19,7 @@ import monasca_setup.detection
 _LXC_PWD = '/var/lib/lxc'
 log = logging.getLogger(__name__)
 
+
 class LXC(monasca_setup.detection.Plugin):
     """Detect if LXC is present on the host.
 
@@ -47,13 +48,13 @@ class LXC(monasca_setup.detection.Plugin):
         config = monasca_setup.agent_config.Plugins()
         config['default'] = {'init_config': None,
                              'instances': [
-                             {'container': 'all',
-                              'state': True,
-                              'cpu': True,
-                              'mem': True,
-                              'blkio': True,
-                              'net': True
-                             }]}
+                                 {'container': 'all',
+                                  'state': True,
+                                  'cpu': True,
+                                  'mem': True,
+                                  'blkio': True,
+                                  'net': True
+                                  }]}
         return config
 
     def dependencies_installed(self):

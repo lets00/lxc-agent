@@ -24,6 +24,7 @@ _LXC_CGROUP_DISK_PWD = '{0}/blkio/lxc'.format(_LXC_CGROUP_PWD)
 _LXC_NET_REGEX = re.compile(r'(\w+):(.+)')
 _LXC_DISK_REGEX = re.compile(r'(\w+)\s(\d+)')
 
+
 class LXC(checks.AgentCheck):
     """ Agent to collect LXC cgroup information based mostly on read cgroup
     files of each container"""
@@ -43,12 +44,13 @@ class LXC(checks.AgentCheck):
             return [name for name in os.listdir(_LXC_CGROUP_CPU_PWD)
                     if os.path.isdir(_LXC_CGROUP_CPU_PWD + name)]
 
-        if os.path.isdir('{0}/{1}'.format(_LXC_CGROUP_CPU_PWD, container_name)):
+        if os.path.isdir('{0}/{1}'.format(_LXC_CGROUP_CPU_PWD,
+                                          container_name)):
             self.log.info('\tContainer name: ' + container_name)
             return [container_name]
         else:
-            self.log.error('\tContainer {0} was not found'\
-                            .format(container_name))
+            self.log.error('\tContainer {0} was not found'
+                           .format(container_name))
             return
 
     def _collect_cpu_metrics(self, container_name):
@@ -73,7 +75,7 @@ class LXC(checks.AgentCheck):
         metrics = self._get_net_metrics(container_name)
         for iface_name, iface_metrics in metrics.iteritems():
             net_dimensions = self._get_dimensions(container_name,
-                                             {'iface': iface_name})
+                                                  {'iface': iface_name})
             for metric, value in iface_metrics.iteritems():
                 self.gauge(metric, value, dimensions=net_dimensions)
 
@@ -87,21 +89,19 @@ class LXC(checks.AgentCheck):
 
     def _get_cpu_metrics(self, container_name):
         """Get metrics from cpuacct.usage cgroup file
-        
+
             :return: a dictionary containing cpu metrics defined on container
             cgroup
         """
         metrics = {}
         cpu_cgroup = '{0}/{1}/'.format(_LXC_CGROUP_CPU_PWD, container_name)
-        metrics['cpuacct.usage'] = int(open(cpu_cgroup + 'cpuacct.usage', 'r')\
-                                      .readline().rstrip('\n'))
-        cpuacct_usage_percpu = open(cpu_cgroup + 'cpuacct.usage_percpu' , 'r')\
-                                    .readline().rstrip(' \n').split(' ')
+        metrics['cpuacct.usage'] = int(open(cpu_cgroup + 'cpuacct.usage', 'r')
+                                       .readline().rstrip('\n'))
+        cpuacct_usage_percpu = open(cpu_cgroup + 'cpuacct.usage_percpu', 'r')\
+            .readline().rstrip(' \n').split(' ')
         for cpu in range(len(cpuacct_usage_percpu)):
             metrics['cpuacct.usage_percpu.cpu{0}'.format(cpu)] = \
                 int(cpuacct_usage_percpu[cpu])
-
-        cpu_file = open(cpu_cgroup + 'cpuacct.stat', 'r').read().split('\n')
         metrics_stat = self._get_metrics_by_file(cpu_cgroup + 'cpuacct.stat',
                                                  'cpuacct')
         metrics.update(metrics_stat)
@@ -110,8 +110,8 @@ class LXC(checks.AgentCheck):
     def _get_mem_metrics(self, container_name):
         """Get metrics from memory.stat cgroup file
 
-           :return: a dictionary containing memory metrics defined on container
-           cgroup
+           :returns: a dictionary containing memory metrics defined on
+           container cgroup
         """
         mem_cgroup = '{0}/{1}/'.format(_LXC_CGROUP_MEM_PWD, container_name)
         metrics = self._get_metrics_by_file(mem_cgroup + 'memory.stat',
@@ -121,24 +121,17 @@ class LXC(checks.AgentCheck):
     def _get_net_metrics(self, container_name):
         """Get metrics for each net interface found
 
-	       :returns: a dictionary containing metrics regarding each
-	       net interface found, in the format:
-
-		   {
-		       'lo': {
-		           'net.rx.bytes': 1234
-		       },
-		    ...
-		   }
+        :returns: a dictionary containing metrics regarding each
+        net interface found, in the format:
+        { 'lo': { 'net.rx.bytes': 1234 }, ...}
         """
         metrics = {}
         pid = self._get_pid_container(container_name)
         net_cgroup = '/proc/{0}/net/'.format(pid)
-        with open(net_cgroup + 'dev','r') as dev_file:
+        with open(net_cgroup + 'dev', 'r') as dev_file:
             for line in dev_file:
                 iface = re.search(_LXC_NET_REGEX, line)
                 if iface:
-                    #case pattern match
                     iface_name = iface.group(1)
                     iface_info = iface.group(2).split()
                     metrics[iface_name] = {
@@ -162,20 +155,19 @@ class LXC(checks.AgentCheck):
         return metrics
 
     def _get_disk_metrics(self, container_name):
-        """Get metrics blkio.throttle.io_service_bytes from  cgroup file
+        """Get metrics blkio.throttle.io_service_bytes from cgroup file
 
             :return: a dictionary containing blkio metrics used to verify disk
             cgroup usage
         """
         metrics = {}
-        pid = self._get_pid_container(container_name)
         disk_cgroup = '{0}/{1}/blkio.throttle.io_service_bytes'.format(
                        _LXC_CGROUP_DISK_PWD, container_name)
         with open(disk_cgroup, 'r') as disk_file:
             for line in disk_file:
                 disk = re.search(_LXC_DISK_REGEX, line)
                 if disk:
-                    disk_key ='blkio.{0}'.format(disk.group(1)).lower()
+                    disk_key = 'blkio.{0}'.format(disk.group(1)).lower()
                     disk_value = disk.group(2)
                     metrics[disk_key] = int(disk_value)
         return metrics
@@ -188,11 +180,11 @@ class LXC(checks.AgentCheck):
         with open(filename, 'r') as cgroup_file:
             for line in cgroup_file:
                 resource_post_key, resource_value = line.split(' ')
-                resource_key = '{0}.{1}'.format(pre_key,resource_post_key)
+                resource_key = '{0}.{1}'.format(pre_key, resource_post_key)
                 metrics[resource_key] = int(resource_value)
         return metrics
 
-    def _get_dimensions(self, container_name, options={}):
+    def _get_dimensions(self, container_name, options=None):
         dimensions = {'container_name': container_name,
                       'service': 'lxc'}
         dimensions.update(options)
