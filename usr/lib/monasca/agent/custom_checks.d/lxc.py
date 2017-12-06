@@ -32,17 +32,21 @@ class LXC(checks.AgentCheck):
     def check(self, instance):
         self.instance = instance
         self.containers = self._containers_name()
+        self.increment('running_containers', len(self.containers),
+                       {'service': 'lxc'})
         for container_name in self.containers:
             self._collect_cpu_metrics(container_name)
             self._collect_mem_metrics(container_name)
+            self._collect_swap_metrics(container_name)
             self._collect_net_metrics(container_name)
             self._collect_disk_metrics(container_name)
 
-    def _containers_name(self):
+    def _containers_name(self):        
         container_name = self.instance.get('container')
         if container_name == 'all':
             return [name for name in os.listdir(_LXC_CGROUP_CPU_PWD)
-                    if os.path.isdir(_LXC_CGROUP_CPU_PWD + name)]
+                    if os.path.isdir('{0}/{1}'.format(_LXC_CGROUP_CPU_PWD,
+                                                      name))]
 
         if os.path.isdir('{0}/{1}'.format(_LXC_CGROUP_CPU_PWD,
                                           container_name)):
@@ -68,6 +72,15 @@ class LXC(checks.AgentCheck):
         mem_dimensions = self._get_dimensions(container_name)
         for metric, value in metrics.iteritems():
             self.gauge(metric, value, dimensions=mem_dimensions)
+
+    def _collect_swap_metrics(self, container_name):
+        if not self.instance.get('swap', True):
+            return
+        metrics = self._get_swap_metrics(container_name)
+        if metrics:
+            swap_dimensions = self._get_dimensions(container_name)
+            for metric, value in metrics.iteritems():
+                self.gauge(metric, value, dimensions=swap_dimensions)
 
     def _collect_net_metrics(self, container_name):
         if not self.instance.get('net', True):
@@ -108,14 +121,40 @@ class LXC(checks.AgentCheck):
         return metrics
 
     def _get_mem_metrics(self, container_name):
-        """Get metrics from memory.stat cgroup file
+        """Get metrics from memory.stat and memory cgroup file
 
            :returns: a dictionary containing memory metrics defined on
            container cgroup
         """
+        metrics = {}
         mem_cgroup = '{0}/{1}/'.format(_LXC_CGROUP_MEM_PWD, container_name)
         metrics = self._get_metrics_by_file(mem_cgroup + 'memory.stat',
                                             'memory')
+        # Get others cgroup memory values
+        with open('{0}/memory.usage_in_bytes'.format(mem_cgroup)) as mem_file:
+            for line in mem_file:
+                metrics['memory.usage_in_bytes'] = int(line)
+        return metrics
+
+    def _get_swap_metrics(self, container_name):
+        """Get swap metrics from memory cgroup file. If swapaccount is defined,
+           you can control swap memory. To active swap memory control, set
+           GRUB_CMDLINE_LINUX_DEFAULT="swapaccount=1" on /etc/default/grub file
+           and restart the machine.
+
+           :returns: a dictionary containing swap metrics defined on
+           container cgroup
+        """
+        metrics = {}
+        swap_file = '{0}/{1}/memory.memsw.usage_in_bytes'.format(_LXC_CGROUP_MEM_PWD,
+                                                                 container_name)
+        if os.path.isfile(swap_file):
+            with open(swap_file) as mem_file:
+                for line in mem_file:
+                    metrics['memory.memsw.usage_in_bytes'] = int(line)
+        else:
+            self.log.error('Swap cgroup fine not found. '
+                           'Verify if swapaccount control is enable')
         return metrics
 
     def _get_net_metrics(self, container_name):
@@ -187,7 +226,8 @@ class LXC(checks.AgentCheck):
     def _get_dimensions(self, container_name, options=None):
         dimensions = {'container_name': container_name,
                       'service': 'lxc'}
-        dimensions.update(options)
+        if options:
+            dimensions.update(options)
         return self._set_dimensions(dimensions, self.instance)
 
     def _get_pid_container(self, container_name):
